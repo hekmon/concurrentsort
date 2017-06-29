@@ -14,5 +14,5 @@ Sorted in 7.100639023s
 Checking slice order...
 PASS
 ok  	concurrentsort	7.964s
-Success: Tests passed.```
-
+Success: Tests passed.
+```
