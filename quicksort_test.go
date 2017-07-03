@@ -60,7 +60,6 @@ func qsLaunch(sliceSize, nbWorkers int) error {
 func TestQuickSort100000(t *testing.T) {
 	var err error
 	size := 100000
-	fmt.Println()
 	if err = qsLaunch(size, 1); err != nil {
 		t.Error(err.Error())
 	}
@@ -74,7 +73,6 @@ func TestQuickSort100000(t *testing.T) {
 func TestQuickSort1000000(t *testing.T) {
 	var err error
 	size := 1000000
-	fmt.Println()
 	if err = qsLaunch(size, 1); err != nil {
 		t.Error(err.Error())
 	}
@@ -88,11 +86,28 @@ func TestQuickSort1000000(t *testing.T) {
 func TestQuickSort10000000(t *testing.T) {
 	var err error
 	size := 10000000
-	fmt.Println()
 	if err = qsLaunch(size, 1); err != nil {
 		t.Error(err.Error())
 	}
 	fmt.Println()
+	if err = qsLaunch(size, runtime.NumCPU()); err != nil {
+		t.Error(err.Error())
+	}
+	fmt.Println()
+}
+
+func TestQuickSort30000000W1(t *testing.T) {
+	var err error
+	size := 30000000
+	if err = qsLaunch(size, 1); err != nil {
+		t.Error(err.Error())
+	}
+	fmt.Println()
+}
+
+func TestQuickSort30000000WNumCPU(t *testing.T) {
+	var err error
+	size := 30000000
 	if err = qsLaunch(size, runtime.NumCPU()); err != nil {
 		t.Error(err.Error())
 	}
