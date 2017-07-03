@@ -4,8 +4,9 @@ import (
 	"sync"
 )
 
-// Need proper benchmarking to compute the right value vs the cost of a goroutine
-const QuickSortMinSizeForConcurrency = 10000
+// QuickSortMinSizeForConcurrency will prevent starting another goroutine if the slice is too small
+var QuickSortMinSizeForConcurrency = 1000 // good value for IntSlice
+// Need proper benchmarking to compute the right value vs the cost of a goroutine for each type
 
 /*
 	Interface and common types
