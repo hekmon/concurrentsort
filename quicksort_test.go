@@ -9,40 +9,38 @@ import (
 	"time"
 )
 
-const size = 10000000
-
-var toSort IntSlice
-
-func init() {
-	fmt.Println("Initializing an empty slice with", size, "slots")
-	toSort = make(IntSlice, size)
+func qsInit(toSort *IntSlice, sliceSize int) {
+	fmt.Println("Initializing an empty slice with", sliceSize, "slots")
+	*toSort = make(IntSlice, sliceSize)
 	fmt.Println("Filling it up with random numbers")
 	rand.Seed(time.Now().UnixNano())
 	nbCPUs := runtime.NumCPU()
-	indexesByCPU := size / nbCPUs
+	indexesByCPU := sliceSize / nbCPUs
 	var fillGroup sync.WaitGroup
 	for cpu := 0; cpu < nbCPUs; cpu++ {
 		start := indexesByCPU * cpu
 		end := indexesByCPU * (cpu + 1)
-		if cpu == nbCPUs-1 && end != len(toSort) {
-			end = len(toSort)
+		if cpu == nbCPUs-1 && end != len(*toSort) {
+			end = len(*toSort)
 		}
 		fillGroup.Add(1)
 		go func(s, e int) {
 			defer fillGroup.Done()
 			for i := s; i < e; i++ {
-				toSort[i] = int(rand.Int())
-				// toSort[i] = int(rand.Int31n(20))
+				(*toSort)[i] = int(rand.Int())
 			}
 		}(start, end)
 	}
 	fillGroup.Wait()
-	fmt.Println("Setup done")
+	fmt.Println("Init done")
 }
 
-func TestQuickSort(t *testing.T) {
+func qsLaunch(sliceSize, nbWorkers int) error {
+	// Create the slice placeholder
+	var toSort IntSlice
+	// Init the slice
+	qsInit(&toSort, sliceSize)
 	// Sort
-	nbWorkers := runtime.NumCPU()
 	fmt.Println("Start sorting with", nbWorkers, "workers")
 	start := time.Now()
 	QuickSort(toSort, nbWorkers)
@@ -53,7 +51,50 @@ func TestQuickSort(t *testing.T) {
 	for i := 1; i < len(toSort); i++ {
 		previous = i - 1
 		if toSort[previous] > toSort[i] {
-			t.Errorf("Error: index %d is greater (%d) than index %d (%d)\n", previous, toSort[previous], i, toSort[i])
+			return fmt.Errorf("value at index %d is greater (%d) than value at index %d (%d)", previous, toSort[previous], i, toSort[i])
 		}
 	}
+	return nil
+}
+
+func TestQuickSort100000(t *testing.T) {
+	var err error
+	size := 100000
+	fmt.Println()
+	if err = qsLaunch(size, 1); err != nil {
+		t.Error(err.Error())
+	}
+	fmt.Println()
+	if err = qsLaunch(size, runtime.NumCPU()); err != nil {
+		t.Error(err.Error())
+	}
+	fmt.Println()
+}
+
+func TestQuickSort1000000(t *testing.T) {
+	var err error
+	size := 1000000
+	fmt.Println()
+	if err = qsLaunch(size, 1); err != nil {
+		t.Error(err.Error())
+	}
+	fmt.Println()
+	if err = qsLaunch(size, runtime.NumCPU()); err != nil {
+		t.Error(err.Error())
+	}
+	fmt.Println()
+}
+
+func TestQuickSort10000000(t *testing.T) {
+	var err error
+	size := 10000000
+	fmt.Println()
+	if err = qsLaunch(size, 1); err != nil {
+		t.Error(err.Error())
+	}
+	fmt.Println()
+	if err = qsLaunch(size, runtime.NumCPU()); err != nil {
+		t.Error(err.Error())
+	}
+	fmt.Println()
 }
