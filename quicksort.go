@@ -4,6 +4,9 @@ import (
 	"sync"
 )
 
+// Need proper benchmarking to compute the right value vs the cost of a goroutine
+const QuickSortMinSizeForConcurrency = 10000
+
 /*
 	Interface and common types
 */
@@ -78,24 +81,33 @@ func quickSort(data QuickSortable, manager *quickSortConcurrentManager) {
 		pivotIndex := quickSortSelectPivot(data)
 		// Partition it and recover new pivot index
 		pivotIndex = quickSortPartition(data, pivotIndex)
-		// Sort the first sub slice
-		if manager.isAWorkerAvailable() {
-			go func(d QuickSortable, pi int) {
+		// Prepare the subslices
+		firstSlice := data.GetSubSliceTo(pivotIndex)
+		secondSlice := data.GetSubSliceFrom(pivotIndex + 1)
+		// Are some of them eligible to concurrency ?
+		firstSideLaunched := false
+		secondSideLaunched := false
+		// Try to side launch sub slices quicksort
+		if firstSlice.Len() >= QuickSortMinSizeForConcurrency && manager.isAWorkerAvailable() {
+			go func() {
 				defer manager.workerDone()
-				quickSort(d.GetSubSliceTo(pi), manager)
-			}(data, pivotIndex)
-		} else {
-			// Run the recursive call within the same goroutine
-			quickSort(data.GetSubSliceTo(pivotIndex), manager)
+				quickSort(firstSlice, manager)
+			}()
+			firstSideLaunched = true
+		} else if secondSlice.Len() >= QuickSortMinSizeForConcurrency && manager.isAWorkerAvailable() {
+			// If first did not make the side launch, maybe the second will ?
+			go func() {
+				defer manager.workerDone()
+				quickSort(secondSlice, manager)
+			}()
+			secondSideLaunched = true
 		}
-		// Sort the second sub slice
-		if manager.isAWorkerAvailable() {
-			go func(d QuickSortable, pi int) {
-				defer manager.workerDone()
-				quickSort(d.GetSubSliceFrom(pi), manager)
-			}(data, pivotIndex+1)
-		} else {
-			quickSort(data.GetSubSliceFrom(pivotIndex+1), manager)
+		// Sort within the same goroutine
+		if !firstSideLaunched {
+			quickSort(firstSlice, manager)
+		}
+		if !secondSideLaunched {
+			quickSort(secondSlice, manager)
 		}
 	}
 }
