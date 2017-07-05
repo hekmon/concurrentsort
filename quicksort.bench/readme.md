@@ -5,12 +5,13 @@ Compute the ideal slice size limit for concurrency on IntSlice type.
 ## Run 1
 
 ### Setup
-Start limit       : 0
-Increase limit    : 10
-Stop limit        : 100
-Slice size        : 16777216 (2^24)
-Nb runs per limit : 128 (2^7)
-Nb workers        : runtime.NumCPU() -> 8
+
+* Start limit       : 0
+* Increase limit    : 10
+* Stop limit        : 100
+* Slice size        : 16777216 (2^24)
+* Nb runs per limit : 128 (2^7)
+* Nb workers        : runtime.NumCPU() -> 8
 
 ### Log
 
@@ -79,17 +80,18 @@ Summary :
 
 ### Graph
 
-[![Benchmark 1 chart](https://raw.githubusercontent.com/Hekmon/concurrentsort/master/run_1_chart.png)](https://raw.githubusercontent.com/Hekmon/concurrentsort/master/run_1_chart.png)
+[![Benchmark 1 chart](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_1_chart.png)](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_1_chart.png)
 
 ## Run 2
 
 ### Setup
-Start limit       : 0
-Increase limit    : 2
-Stop limit        : 20
-Slice size        : 16777216 (2^24)
-Nb runs per limit : 128 (2^7)
-Nb workers        : runtime.NumCPU() -> 8
+
+* Start limit       : 0
+* Increase limit    : 2
+* Stop limit        : 20
+* Slice size        : 16777216 (2^24)
+* Nb runs per limit : 128 (2^7)
+* Nb workers        : runtime.NumCPU() -> 8
 
 ### Log
 
@@ -158,4 +160,4 @@ Summary :
 
 ### Graph
 
-[![Benchmark 2 chart](https://raw.githubusercontent.com/Hekmon/concurrentsort/master/bench_2_chart.png)](https://raw.githubusercontent.com/Hekmon/concurrentsort/master/bench_2_chart.png)
+[![Benchmark 2 chart](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_2_chart.png)](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_2_chart.png)
