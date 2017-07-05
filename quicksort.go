@@ -4,9 +4,12 @@ import (
 	"sync"
 )
 
-// QuickSortMinSizeForConcurrency will prevent starting another goroutine if the slice is too small
-var QuickSortMinSizeForConcurrency = 1000 // good value for IntSlice
-// Need proper benchmarking to compute the right value vs the cost of a goroutine for each type
+// QuickSortMinSizeForConcurrency will prevent performance issues at the end of the quicksort subslices tree:
+// On big trees (aka big starting slices), on the last tree levels, all the leaves will all ask for the concurrent
+// manager mutex and therefore introduce significant performance hit. Restricting concurrency for the last
+// levels of the tree by using a minimum slice length will greatly mitigate this issue.
+// Check concurrentsort/quicksort.bench package.
+var QuickSortMinSizeForConcurrency = 16 // can be lowered to 8 if the slice is small to mid size
 
 /*
 	Interface and common types
@@ -88,7 +91,6 @@ func quickSort(data QuickSortable, manager *quickSortConcurrentManager) {
 		// Are some of them eligible to concurrency ?
 		firstSideLaunched := false
 		secondSideLaunched := false
-		// Try to side launch sub slices quicksort
 		if firstSlice.Len() >= QuickSortMinSizeForConcurrency && manager.isAWorkerAvailable() {
 			go func() {
 				defer manager.workerDone()
@@ -96,7 +98,6 @@ func quickSort(data QuickSortable, manager *quickSortConcurrentManager) {
 			}()
 			firstSideLaunched = true
 		} else if secondSlice.Len() >= QuickSortMinSizeForConcurrency && manager.isAWorkerAvailable() {
-			// If first did not make the side launch, maybe the second will ?
 			go func() {
 				defer manager.workerDone()
 				quickSort(secondSlice, manager)

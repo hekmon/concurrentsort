@@ -95,21 +95,3 @@ func TestQuickSort10000000(t *testing.T) {
 	}
 	fmt.Println()
 }
-
-func TestQuickSort20000000W1(t *testing.T) {
-	var err error
-	size := 20000000
-	if err = qsLaunch(size, 1); err != nil {
-		t.Error(err.Error())
-	}
-	fmt.Println()
-}
-
-func TestQuickSort20000000WNumCPU(t *testing.T) {
-	var err error
-	size := 20000000
-	if err = qsLaunch(size, runtime.NumCPU()); err != nil {
-		t.Error(err.Error())
-	}
-	fmt.Println()
-}
