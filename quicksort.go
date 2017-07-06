@@ -66,10 +66,14 @@ func (qscm *quickSortConcurrentManager) workerDone() {
 }
 
 // QuickSort sorts data using the quicksort algo distributed on nbWorkers goroutines
+// nbWorkers will be used to spawn goroutines when needed. If nbworkers < 1, runtime.NumCPU() will be used instead.
 // forceConcurrentLimit allows to override the value computed to set the minimum slice size for concurrency.
 // Set to nil to allow auto computation. Check quicksort.bench package for more informations.
 func QuickSort(data QuickSortable, nbWorkers int, forceConcurrentLimit *int) {
 	// Init the concurrent manager
+	if nbWorkers < 1 {
+		nbWorkers = runtime.NumCPU()
+	}
 	manager := quickSortConcurrentManager{availableWorkers: nbWorkers - 1} // the current goroutine is the first worker
 	// And the concurrent "forking" limit
 	var concurrentLimit int
