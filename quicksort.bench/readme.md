@@ -2,7 +2,9 @@
 
 Compute the ideal slice size limit for concurrency on IntSlice type.
 
-The quicksort algo will create 2 sub slices after partitionning the current one. The algo will then check if this 2 slices can be launched in another goroutine by asking the concurrent manager which use a mutex. As the tree progress to end last leaves, the sub slices will be shorted and shorted. Therefore, the call to the mutex will be more and more frequent. This is not an issue with only one worker, but the more workers there is, the more calls to this mutex will happen in the last level of the tree, significantly slower the process. To mitigate this issue, a limit is used to prevent concurrency and so calls to the manager and it's mutex. For example, if the limit is 12, a goroutine will not ask the manager if a slot is free in case the sub slice is less than 12 and launch the quicksort partitionning within the same goroutine instead. This will prevent launching new goroutines for very small slices which could be sorted for less time than the cost of launching a goroutine but also (and most importantly) prevent a call to the manager and so prevent the mutex lock (or wait for the lock).
+The quicksort algo will create 2 sub slices after partitionning the current one. The algo will then check if this 2 slices can be launched in another goroutine by asking the concurrent manager which use a mutex. As the tree progress to end last leaves, the sub slices will be shorted and shorted. Therefore, the call to the mutex will be more and more frequent. This is not an issue with only one worker, but the more workers there is, the more calls to this mutex will happen in the last level of the tree, significantly slower the process.
+
+To mitigate this issue, a limit is used to prevent concurrency and so calls to the manager and it's mutex. For example, if the limit is 12, a goroutine will not ask the manager if a slot is free in case the sub slice is less than 12 and launch the quicksort partitionning within the same goroutine instead. This will prevent launching new goroutines for very small slices which could be sorted for less time than the cost of launching a goroutine but also (and most importantly) prevent a call to the manager and so prevent the mutex lock (or wait for the lock).
 
 This limit is dependent on the number of workers and theses benchmarks try to approach the right value for different setups.
 
@@ -345,4 +347,4 @@ Summary :
 
 ## Conclusion
 
-It's seems a good value would be `nbWorkers * 1.5`. But only if nbWorkers <= nbCPU, indeed if nbWorkers > nbCPU not all workers can request the mutex in the same time and therefor increasing the limitation is pointless.
+It's seems a good value would be `nbWorkers * 1.5`. But only if `nbWorkers <= nbCPU`, indeed if `nbWorkers > nbCPU` not all workers can request the mutex in the same time and therefor increasing the limitation is pointless.
