@@ -43,7 +43,7 @@ func qsLaunch(sliceSize, nbWorkers int) error {
 	// Sort
 	fmt.Println("Start sorting with", nbWorkers, "workers")
 	start := time.Now()
-	QuickSort(toSort, nbWorkers)
+	QuickSort(toSort, nbWorkers, nil)
 	fmt.Println("Sorted in", time.Since(start))
 	// Check
 	fmt.Println("Checking slice order...")
