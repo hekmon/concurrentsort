@@ -10,6 +10,8 @@ import (
 	"sort"
 )
 
+// QuickSortMinSizeCompute returns the best usable concurrency slice limit for quicksort.
+// Warning: extremly long
 func QuickSortMinSizeCompute(startAt, increase, stopAt, sliceSize, nbRun, nbWorkers int) int {
 	fmt.Println("* Determining the best limit for concurrency on a slice of size", sliceSize, "with", nbWorkers, "workers")
 	type benchdata struct {
