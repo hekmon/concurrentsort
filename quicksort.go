@@ -1,15 +1,9 @@
 package concurrentsort
 
 import (
+	"runtime"
 	"sync"
 )
-
-// QuickSortMinSizeForConcurrency will prevent performance issues at the end of the quicksort subslices tree:
-// On big trees (aka big starting slices), on the last tree levels, all the leaves will all ask for the concurrent
-// manager mutex and therefore introduce significant performance hit. Restricting concurrency for the last
-// levels of the tree by using a minimum slice length will greatly mitigate this issue.
-// Check concurrentsort/quicksort.bench package.
-var QuickSortMinSizeForConcurrency = 16 // can be lowered to 8 if the slice is small to mid size
 
 /*
 	Interface and common types
@@ -72,13 +66,30 @@ func (qscm *quickSortConcurrentManager) workerDone() {
 }
 
 // QuickSort sorts data using the quicksort algo distributed on nbWorkers goroutines
-func QuickSort(data QuickSortable, nbWorkers int) {
-	manager := quickSortConcurrentManager{availableWorkers: nbWorkers - 1}
-	quickSort(data, &manager)
+// forceConcurrentLimit allows to override the value computed to set the minimum slice size for concurrency.
+// Set to nil to allow auto computation. Check quicksort.bench package for more informations.
+func QuickSort(data QuickSortable, nbWorkers int, forceConcurrentLimit *int) {
+	// Init the concurrent manager
+	manager := quickSortConcurrentManager{availableWorkers: nbWorkers - 1} // the current goroutine is the first worker
+	// And the concurrent "forking" limit
+	var concurrentLimit int
+	if forceConcurrentLimit != nil {
+		concurrentLimit = *forceConcurrentLimit
+	} else {
+		// How many real cores will be involved in the process ?
+		cpuCoresInvolved := nbWorkers
+		if nbWorkers > runtime.NumCPU() {
+			cpuCoresInvolved = runtime.NumCPU()
+		}
+		// Use this value to compute ideal slice limit for concurrency
+		concurrentLimit = int(float64(cpuCoresInvolved) * 1.5) // 1.5 magik number: check quicksort.bench package
+	}
+	// Start worker 1
+	quickSort(data, concurrentLimit, &manager)
 	manager.rdvpoint.Wait()
 }
 
-func quickSort(data QuickSortable, manager *quickSortConcurrentManager) {
+func quickSort(data QuickSortable, sliceMinSize int, manager *quickSortConcurrentManager) {
 	// Start sorting
 	if data.Len() > 1 {
 		// Select a pivot on the current slice
@@ -91,25 +102,25 @@ func quickSort(data QuickSortable, manager *quickSortConcurrentManager) {
 		// Are some of them eligible to concurrency ?
 		firstSideLaunched := false
 		secondSideLaunched := false
-		if firstSlice.Len() >= QuickSortMinSizeForConcurrency && manager.isAWorkerAvailable() {
+		if firstSlice.Len() >= sliceMinSize && manager.isAWorkerAvailable() {
 			go func() {
 				defer manager.workerDone()
-				quickSort(firstSlice, manager)
+				quickSort(firstSlice, sliceMinSize, manager)
 			}()
 			firstSideLaunched = true
-		} else if secondSlice.Len() >= QuickSortMinSizeForConcurrency && manager.isAWorkerAvailable() {
+		} else if secondSlice.Len() >= sliceMinSize && manager.isAWorkerAvailable() {
 			go func() {
 				defer manager.workerDone()
-				quickSort(secondSlice, manager)
+				quickSort(secondSlice, sliceMinSize, manager)
 			}()
 			secondSideLaunched = true
 		}
 		// Sort within the same goroutine
 		if !firstSideLaunched {
-			quickSort(firstSlice, manager)
+			quickSort(firstSlice, sliceMinSize, manager)
 		}
 		if !secondSideLaunched {
-			quickSort(secondSlice, manager)
+			quickSort(secondSlice, sliceMinSize, manager)
 		}
 	}
 }
