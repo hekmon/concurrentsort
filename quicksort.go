@@ -76,7 +76,7 @@ func QuickSort(data QuickSortable, nbWorkers int, forceConcurrentLimit *int) {
 	if forceConcurrentLimit != nil {
 		concurrentLimit = *forceConcurrentLimit
 	} else {
-		// How many real cores will be involved in the process ?
+		// How many real cores will be involved in the process ? (at max, if 1 goroutine == 1 thread, which is not always the case)
 		cpuCoresInvolved := nbWorkers
 		if nbWorkers > runtime.NumCPU() {
 			cpuCoresInvolved = runtime.NumCPU()
