@@ -83,6 +83,9 @@ func QuickSort(data QuickSortable, nbWorkers int, forceConcurrentLimit *int) {
 		}
 		// Use this value to compute ideal slice limit for concurrency
 		concurrentLimit = int(float64(cpuCoresInvolved) * 1.5) // 1.5 magik number: check quicksort.bench package
+		if concurrentLimit < 2 {
+			concurrentLimit = 2 // quickSort() will only run if len > 1, so no need to start a goroutine for function doing nothing
+		}
 	}
 	// Start worker 1
 	quickSort(data, concurrentLimit, &manager)
