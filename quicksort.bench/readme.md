@@ -2,6 +2,28 @@
 
 Compute the ideal slice size limit for concurrency on IntSlice type.
 
+The quicksort algo will create 2 sub slices after partitionning the current one. The algo will then check if this 2 slices can be launched in another goroutine by asking the concurrent manager which use a mutex. As the tree progress to end last leaves, the sub slices will be shorted and shorted. Therefore, the call to the mutex will be more and more frequent. This is not an issue with only one worker, but the more workers there is, the more calls to this mutex will happen in the last level of the tree, significantly slower the process. To mitigate this issue, a limit is used to prevent concurrency and so calls to the manager and it's mutex. For example, if the limit is 12, a goroutine will not ask the manager if a slot is free in case the sub slice is less than 12 and launch the quicksort partitionning within the same goroutine instead. This will prevent launching new goroutines for very small slices which could be sorted for less time than the cost of launching a goroutine but also (and most importantly) prevent a call to the manager and so prevent the mutex lock (or wait for the lock).
+
+This limit is dependent on the number of workers and theses benchmarks try to approach the right value for different setups.
+
+* [Run 1](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#run-1)
+    * [Setup](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#setup)
+    * [Log](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#log)
+    * [Chart](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#chart)
+* [Run 2](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#run-2)
+    * [Setup](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#setup-1)
+    * [Log](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#log-1)
+    * [Chart](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#chart-1)
+* [Run 3](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#run-3)
+    * [Setup](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#setup-2)
+    * [Log](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#log-2)
+    * [Chart](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#chart-2)
+* [Run 4](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#run-4)
+    * [Setup](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#setup-3)
+    * [Log](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#log-3)
+    * [Chart](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#chart-3)
+* [Conclusion](https://github.com/Hekmon/concurrentsort/tree/master/quicksort.bench#conclusion)
+
 ## Run 1
 
 ### Setup
@@ -78,7 +100,7 @@ Summary :
 * Best limit is 40 with 2.519737656s
 ```
 
-### Graph
+### Chart
 
 [![Benchmark 1 chart](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_1_chart.png)](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_1_chart.png)
 
@@ -158,7 +180,7 @@ Summary :
 * Best limit is 16 with 2.862066133s
 ```
 
-### Graph
+### Chart
 
 [![Benchmark 2 chart](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_2_chart.png)](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_2_chart.png)
 
@@ -238,7 +260,7 @@ Summary :
 * Best limit is 20 with 3.907300657s
 ```
 
-### Graph
+### Chart
 
 [![Benchmark 3 chart](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_3_chart.png)](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_3_chart.png)
 
@@ -320,3 +342,7 @@ Summary :
 ### Chart
 
 [![Benchmark 4 chart](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_4_chart.png)](https://github.com/Hekmon/concurrentsort/raw/master/quicksort.bench/bench_4_chart.png)
+
+## Conclusion
+
+It's seems a good value would be `nbWorkers * 1.5`. But only if nbWorkers <= nbCPU, indeed if nbWorkers > nbCPU not all workers can request the mutex in the same time and therefor increasing the limitation is pointless.
