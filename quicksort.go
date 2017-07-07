@@ -65,32 +65,19 @@ func (qscm *quickSortConcurrentManager) workerDone() {
 	qscm.rdvpoint.Done()
 }
 
-// QuickSort sorts data using the quicksort algo distributed on nbWorkers goroutines
-// nbWorkers will be used to spawn goroutines when needed. If nbworkers < 1, runtime.NumCPU() will be used instead.
-// forceConcurrentLimit allows to override the value computed to set the minimum slice size for concurrency.
-// Set to nil to allow auto computation. Check quicksort.bench package for more informations.
-func QuickSort(data QuickSortable, nbWorkers int, forceConcurrentLimit *int) {
+// QuickSort sorts data using the quicksort algo distributed on multiples workers.
+// It is just a high level wrapper which set optimal parameters to QuickSortCustom().
+// The number of workers will be equal to runtime.NumCPU() and the concurrent limit adapted to the number of workers.
+func QuickSort(data QuickSortable) {
+	QuickSortCustom(data, runtime.NumCPU(), int(float64(runtime.NumCPU())*1.5)) // 1.5 magic number: check quicksort.bench package
+}
+
+// QuickSortCustom sorts data using the quicksort algo distributed on nbWorkers goroutines
+// nbWorkers allows to specify the number of max goroutines which will be used for concurrency.
+// concurrentLimit set the minimum slice size limit for concurrency. Check quicksort.bench package for more informations.
+func QuickSortCustom(data QuickSortable, nbWorkers int, concurrentLimit int) {
 	// Init the concurrent manager
-	if nbWorkers < 1 {
-		nbWorkers = runtime.NumCPU()
-	}
 	manager := quickSortConcurrentManager{availableWorkers: nbWorkers - 1} // the current goroutine is the first worker
-	// And the concurrent "forking" limit
-	var concurrentLimit int
-	if forceConcurrentLimit != nil {
-		concurrentLimit = *forceConcurrentLimit
-	} else {
-		// How many real cores will be involved in the process ? (at max, if 1 goroutine == 1 thread, which is not always the case)
-		cpuCoresInvolved := nbWorkers
-		if nbWorkers > runtime.NumCPU() {
-			cpuCoresInvolved = runtime.NumCPU()
-		}
-		// Use this value to compute ideal slice limit for concurrency
-		concurrentLimit = int(float64(cpuCoresInvolved) * 1.5) // 1.5 magik number: check quicksort.bench package
-		if concurrentLimit < 2 {
-			concurrentLimit = 2 // quickSort() will only run if len > 1, so no need to start a goroutine for function doing nothing
-		}
-	}
 	// Start worker 1
 	quickSort(data, concurrentLimit, &manager)
 	manager.rdvpoint.Wait()
