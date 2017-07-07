@@ -58,7 +58,7 @@ func QuickSortMinSizeCompute(startAt, increase, stopAt, sliceSize, nbRun, nbWork
 			fmt.Print("I")
 			// Sort
 			start = time.Now()
-			concurrentsort.QuickSort(toSort, nbWorkers, &currentLimit)
+			concurrentsort.QuickSortCustom(toSort, nbWorkers, currentLimit)
 			bench[currentLimit].values = append(bench[currentLimit].values, time.Since(start))
 			fmt.Print("S")
 		}
