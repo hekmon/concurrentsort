@@ -41,6 +41,10 @@ func (p IntSlice) GetSubSliceFrom(i int) QuickSortable {
 	Quick Sorting
 */
 
+// WorkersToSliceLimitRatio is the "ideal" ratio between the number of workers and the slice size limit for concurrency
+// Check quicksort.bench package for more informations
+const WorkersToSliceLimitRatio = 1.5
+
 type quickSortConcurrentManager struct {
 	availableWorkers int
 	access           sync.Mutex
@@ -69,17 +73,17 @@ func (qscm *quickSortConcurrentManager) workerDone() {
 // It is just a high level wrapper which set optimal parameters to QuickSortCustom().
 // The number of workers will be equal to runtime.NumCPU() and the concurrent limit adapted to the number of workers.
 func QuickSort(data QuickSortable) {
-	QuickSortCustom(data, runtime.NumCPU(), int(float64(runtime.NumCPU())*1.5)) // 1.5 magic number: check quicksort.bench package
+	QuickSortCustom(data, runtime.NumCPU(), int(float64(runtime.NumCPU())*WorkersToSliceLimitRatio))
 }
 
 // QuickSortCustom sorts data using the quicksort algo distributed on nbWorkers goroutines
 // nbWorkers allows to specify the number of max goroutines which will be used for concurrency.
-// concurrentLimit set the minimum slice size limit for concurrency. Check quicksort.bench package for more informations.
-func QuickSortCustom(data QuickSortable, nbWorkers int, concurrentLimit int) {
+// concurrentSliceSizeLimit set the minimum slice size limit for concurrency. Check quicksort.bench package for more informations.
+func QuickSortCustom(data QuickSortable, nbWorkers int, concurrentSliceSizeLimit int) {
 	// Init the concurrent manager
 	manager := quickSortConcurrentManager{availableWorkers: nbWorkers - 1} // the current goroutine is the first worker
 	// Start worker 1
-	quickSort(data, concurrentLimit, &manager)
+	quickSort(data, concurrentSliceSizeLimit, &manager)
 	manager.rdvpoint.Wait()
 }
 
