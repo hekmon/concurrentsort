@@ -3,6 +3,8 @@ Sorting algorithms parallelized in Golang.
 
 Simply doing them as exercise.
 
+[![GoDoc](https://godoc.org/github.com/Hekmon/concurrentsort?status.svg)](https://godoc.org/github.com/Hekmon/concurrentsort)
+
 ## QuickSort
 
 ```
