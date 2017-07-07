@@ -78,7 +78,8 @@ func QuickSort(data QuickSortable) {
 
 // QuickSortCustom sorts data using the quicksort algo distributed on nbWorkers goroutines
 // nbWorkers allows to specify the number of max goroutines which will be used for concurrency.
-// concurrentSliceSizeLimit set the minimum slice size limit for concurrency. Check quicksort.bench package for more informations.
+// concurrentSliceSizeLimit sets the minimum slice size limit for concurrency.
+// Check quicksort.bench package readme for more informations.
 func QuickSortCustom(data QuickSortable, nbWorkers int, concurrentSliceSizeLimit int) {
 	// Init the concurrent manager
 	manager := quickSortConcurrentManager{availableWorkers: nbWorkers - 1} // the current goroutine is the first worker
