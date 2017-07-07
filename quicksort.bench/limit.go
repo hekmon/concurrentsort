@@ -3,11 +3,11 @@ package main
 import (
 	"fmt"
 	"math/rand"
+	"sort"
 	"sync"
 	"time"
 
 	"concurrentsort"
-	"sort"
 )
 
 // QuickSortMinSizeCompute returns the best usable concurrency slice limit for quicksort.
