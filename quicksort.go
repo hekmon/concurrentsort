@@ -38,12 +38,22 @@ func (p IntSlice) GetSubSliceFrom(i int) QuickSortable {
 }
 
 /*
-	Quick Sorting
+	Quick Sorting (high level)
 */
 
 // WorkersToSliceLimitRatio is the "ideal" ratio between the number of workers and the slice size limit for concurrency
 // Check quicksort.bench package for more informations
 const WorkersToSliceLimitRatio = 1.5
+
+// GetIdealSliceSizeLimit will return the best slice size limit for concurrency based on the number of workers
+// and the number of availables cpu cores.
+// Check quicksort.bench package for more informations
+func GetIdealSliceSizeLimit(nbWorkers int) int {
+	if nbWorkers > runtime.NumCPU() {
+		return int(float64(runtime.NumCPU()) * WorkersToSliceLimitRatio)
+	}
+	return int(float64(nbWorkers) * WorkersToSliceLimitRatio)
+}
 
 type quickSortConcurrentManager struct {
 	availableWorkers int
@@ -73,7 +83,7 @@ func (qscm *quickSortConcurrentManager) workerDone() {
 // It is just a high level wrapper which set optimal parameters to QuickSortCustom().
 // The number of workers will be equal to runtime.NumCPU() and the concurrent limit adapted to the number of workers.
 func QuickSort(data QuickSortable) {
-	QuickSortCustom(data, runtime.NumCPU(), int(float64(runtime.NumCPU())*WorkersToSliceLimitRatio))
+	QuickSortCustom(data, runtime.NumCPU(), GetIdealSliceSizeLimit(runtime.NumCPU()))
 }
 
 // QuickSortCustom sorts data using the quicksort algo distributed on nbWorkers goroutines
@@ -87,6 +97,10 @@ func QuickSortCustom(data QuickSortable, nbWorkers int, concurrentSliceSizeLimit
 	quickSort(data, concurrentSliceSizeLimit, &manager)
 	manager.rdvpoint.Wait()
 }
+
+/*
+	Quick sorting (low level)
+*/
 
 func quickSort(data QuickSortable, sliceMinSize int, manager *quickSortConcurrentManager) {
 	// Start sorting
@@ -137,7 +151,7 @@ func quickSortPartition(data QuickSortable, pivotIndex int) (newPivotIndex int) 
 			j++
 		}
 	}
-	// Swap the pivot to the index where all data on the left are less of equals to him
+	// Swap the pivot to the index where all data on the left are less or equal to him
 	data.Swap(j, pivotIndex)
 	// Return the new pivot index (now at index j)
 	return j
